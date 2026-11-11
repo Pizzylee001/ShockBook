@@ -3,6 +3,7 @@
 **Quantitative Crypto Portfolio Stress-Test Engine, Correlation-Capped Rebalance Desk, and MCP Risk Skill Server**
 
 [![Live Deployment](https://img.shields.io/badge/Live_App-shockbook.vercel.app-FF5526?style=flat-square)](https://shockbook.vercel.app)
+[![Demo Video](https://img.shields.io/badge/YouTube_Demo-Watch_Walkthrough-FF5526?style=flat-square)](https://youtu.be/X8mrggIA28M)
 [![MCP Protocol](https://img.shields.io/badge/MCP_JSON--RPC-2024--11--05-2B6BFF?style=flat-square)](https://shockbook.vercel.app/api/mcp/manifest)
 [![Test Suite](https://img.shields.io/badge/Tests-8%2F8_Passing-16C784?style=flat-square)](./tests/test_shockbook.py)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F2EFE9?style=flat-square)](./LICENSE)
@@ -10,6 +11,7 @@
 **ShockBook** is a multi-token crypto portfolio risk and rebalance engine. It combines single-token market intelligence from RYO-CHAN (`market_overview`, `scan_market`, `analyze_token`, `deep_analysis`, `compare_tokens`, `monitor_market_sentiment_shift`) with 168-hour hourly OHLCV series from OKX V5 to expose hidden cross-asset tail risk, simulate market-wide liquidity shocks, and compute exact dollar rebalance trims before a drawdown hits.
 
 - **Production Application:** [https://shockbook.vercel.app](https://shockbook.vercel.app)
+- **Demo Video (YouTube):** [https://youtu.be/X8mrggIA28M](https://youtu.be/X8mrggIA28M)
 - **Stress Desk (`/desk`):** [https://shockbook.vercel.app/desk](https://shockbook.vercel.app/desk)
 - **Mandate Ledger (`/ledger`):** [https://shockbook.vercel.app/ledger](https://shockbook.vercel.app/ledger)
 - **MCP Skill Workbench (`/skills`):** [https://shockbook.vercel.app/skills](https://shockbook.vercel.app/skills)
