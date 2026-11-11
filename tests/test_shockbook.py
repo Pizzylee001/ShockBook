@@ -245,6 +245,12 @@ def test_all_three_routes_render_and_link(temp_db_path):
         assert "\u2014" not in html
         # Ensure no raw /desk, /ledger, /skills route pills in nav text
         assert '<span class="route-pill">' not in html
+        assert 'href="/static/favicon.svg"' in html
+
+    fav_ico = client.get("/favicon.ico")
+    assert fav_ico.status_code == 200
+    fav_svg = client.get("/static/favicon.svg")
+    assert fav_svg.status_code == 200
 
 
 def test_end_to_end_stress_and_mandate_http_workflow(temp_db_path):
