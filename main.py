@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -119,6 +119,16 @@ def _build_workspace_context(active_route: str) -> Dict[str, Any]:
 @app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def root_redirect(request: Request):
     return RedirectResponse(url="/desk", status_code=302)
+
+
+@app.api_route("/favicon.ico", methods=["GET", "HEAD"])
+async def route_favicon_ico():
+    return FileResponse(str(BASE_DIR / "static" / "favicon.ico"), media_type="image/x-icon")
+
+
+@app.api_route("/favicon.svg", methods=["GET", "HEAD"])
+async def route_favicon_svg():
+    return FileResponse(str(BASE_DIR / "static" / "favicon.svg"), media_type="image/svg+xml")
 
 
 @app.api_route("/desk", methods=["GET", "HEAD"], response_class=HTMLResponse)
