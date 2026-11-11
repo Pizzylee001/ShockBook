@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SHOCKBOOK · Quantitative Portfolio Stress-Test &amp; Rebalance Desk</title>
+<link rel="stylesheet" href="/static/fonts.css">
+<link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+
+<!-- N3 Architectural Split Command Bar -->
+<header class="command-bar" role="banner">
+  <a href="/desk" class="brand-cell">
+    <div class="brand-sigil" aria-hidden="true"></div>
+    <div>
+      <div class="brand-wordmark" translate="no">SHOCKBOOK</div>
+      <div class="brand-tag">RYO-CHAN QUANT RISK OFFICER</div>
+    </div>
+  </a>
+
+  <nav class="nav-tabs" aria-label="Primary Workspace Routes">
+    <a href="/desk" class="nav-link" {% if active_route == 'desk' %}aria-current="page"{% endif %}>
+      <span>Stress Desk</span>
+    </a>
+    <a href="/ledger" class="nav-link" {% if active_route == 'ledger' %}aria-current="page"{% endif %}>
+      <span>Mandate Ledger</span>
+    </a>
+    <a href="/skills" class="nav-link" {% if active_route == 'skills' %}aria-current="page"{% endif %}>
+      <span>MCP Skill Workbench</span>
+    </a>
+  </nav>
+
+  <div class="command-right">
+    <div class="telemetry-chip" id="mcpHeaderBadge">
+      <span class="pulse-dot" id="mcpDot"></span>
+      <span>RYO MCP: <strong>{{ whoami.key_id }}</strong> · OKX 1H LIVE</span>
+    </div>
+    <button type="button" class="theme-btn" onclick="flipTheme()" id="themeToggleBtn" aria-label="Switch color theme">
+      THEME: CARBON VOID
+    </button>
+  </div>
+</header>
+
+<!-- Monumental Interactive Stress-Field Hero Strip -->
+<section class="stress-stage" aria-label="30-Second Portfolio Shock Diff and Interactive Stress Scrubber">
+  <canvas id="stressShaderCanvas" width="1520" height="240" aria-hidden="true"></canvas>
+
+  <div class="stress-stage-inner">
+    <div class="thesis-col">
+      <div>
+        <h1 class="headline-monument">
+          {{ stress.max_pair_label }} CORRELATION (<span id="heroCorrText">{{ "%.2f"|format(stress.max_pair_correlation_168h) }}</span>)
+          <span class="headline-accent" id="heroVerdictText">BREACHES ${{ "{:,.0f}".format(stress.max_drawdown_usd) }} CAP</span>
+          UNDER A <span id="heroShockText">{{ "%.0f"|format(stress.shock_btc_pct) }}%</span> BTC SHOCK.
+        </h1>
+      </div>
+
+      <div class="shock-scrubber-box">
+        <span class="crosshair-tl">+</span>
+        <span class="crosshair-br">+</span>
+        <div class="scrubber-header">
+          <label for="shockRange" class="scrubber-label">Interactive BTC Shock Vector Scrub</label>
+          <span class="scrubber-readout" id="shockReadout">{{ "%.1f"|format(stress.shock_btc_pct) }}% BTC CRASH</span>
+        </div>
+        <input type="range" id="shockRange" class="shock-slider" min="-30" max="-5" step="1" value="{{ stress.shock_btc_pct|int }}" oninput="scrubShock(this.value)">
+        <div class="scenario-preset-row" role="group" aria-label="Stress Scenario Presets">
+          <button type="button" class="preset-btn" aria-pressed="true" onclick="applyPreset(-15, 'btc_crash_15', 'BTC -15% Flash Crash', this)">BTC -15% Flash Crash</button>
+          <button type="button" class="preset-btn" aria-pressed="false" onclick="applyPreset(-22, 'corr_to_1_crunch', 'Corr-to-1 Liquidity Crunch', this)">Corr-to-1 Crunch (-22%)</button>
+          <button type="button" class="preset-btn" aria-pressed="false" onclick="applyPreset(-12, 'funding_squeeze', 'Perp Funding Squeeze (-2.5x ATR)', this)">Funding Squeeze (-12%)</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="monument-metrics">
+      <div class="metric-slab">
+        <div>
+          <div class="metric-title">Unhedged Book Shock Loss</div>
+          <div class="metric-giant" id="mUnhedged" style="color:var(--crimson);">-${{ "{:,.0f}".format(stress.unhedged_drawdown_usd|abs) }}</div>
+        </div>
+        <div class="metric-sub">
+          <span id="mUnhedgedPct">{{ "%.1f"|format(stress.unhedged_drawdown_pct) }}% of ${{ "{:,.0f}".format(stress.portfolio_usd) }} Book</span>
+          <span class="status-tag tag-breach" id="mBreachTag">BREACH +${{ "{:,.0f}".format(stress.drawdown_breach_excess_usd) }}</span>
+        </div>
+      </div>
+
+      <div class="metric-slab">
+        <div>
+          <div class="metric-title">Mandate Rebalanced Loss</div>
+          <div class="metric-giant" id="mHedged" style="color:var(--cobalt-bright);">-${{ "{:,.0f}".format(stress.rebalanced_drawdown_usd|abs) }}</div>
+        </div>
+        <div class="metric-sub">
+          <span id="mHedgedPct">{{ "%.1f"|format(stress.rebalanced_drawdown_pct) }}% of ${{ "{:,.0f}".format(stress.portfolio_usd) }} Book</span>
+          <span class="status-tag tag-pass" id="mPassTag">WITHIN ${{ "{:,.0f}".format(stress.max_drawdown_usd) }} CAP</span>
+        </div>
+      </div>
+
+      <div class="metric-slab">
+        <div>
+          <div class="metric-title">Net Capital Preserved</div>
+          <div class="metric-giant" id="mSaved" style="color:var(--emerald);">+${{ "{:,.0f}".format(stress.capital_preserved_usd) }}</div>
+        </div>
+        <div class="metric-sub">
+          <span id="mSavedPct">+{{ "%.1f"|format(stress.capital_preserved_pct) }}% Tail Cushion Added</span>
+          <span class="status-tag tag-cobalt">MANDATE READY</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<main class="workspace">
+
+  <!-- ==================== ROUTE 1: Stress Desk (/desk) ==================== -->
+  <div id="pane-desk" class="route-pane {% if active_route == 'desk' %}active{% endif %}">
+    <div class="arch-row-top">
+      <!-- Left 5 cols: Multi-Token Book & Rebalance Mandate Diff -->
+      <section class="arch-cell" aria-label="Multi-Token Portfolio Book and Mandate Diff">
+        <div class="cell-head">
+          <h2 class="cell-title">Multi-Token Book &amp; Rebalance Diff</h2>
+          <span class="status-tag tag-cobalt">SORTED BY SHOCK LOSS</span>
+        </div>
+        <div class="cell-body">
+          <!-- Portfolio Basket Presets -->
+          <div class="scenario-preset-row" style="margin-top:0;" role="group" aria-label="Portfolio Basket Presets">
+            <button type="button" class="preset-btn" aria-pressed="true" onclick="selectBasket('sol_avax', this)">Book A: SOL 42% · AVAX 28% · BTC 20% · USDC 10%</button>
+            <button type="button" class="preset-btn" aria-pressed="false" onclick="selectBasket('inj_sui', this)">Book B: INJ 45% · SUI 30% · ETH 15% · USDC 10%</button>
+          </div>
+
+          <!-- Interactive Guardrail Controls -->
+          <div class="guardrail-strip" aria-label="Portfolio and Risk Guardrail Parameters">
+            <div class="guardrail-field">
+              <label for="inputPortfolioUsd">Book Notional ($)</label>
+              <input type="number" id="inputPortfolioUsd" value="{{ stress.portfolio_usd|int }}" min="1000" step="1000" oninput="scrubShock(document.getElementById('shockRange').value)">
+            </div>
+            <div class="guardrail-field">
+              <label for="inputMaxDrawdownUsd">Max Drawdown ($)</label>
+              <input type="number" id="inputMaxDrawdownUsd" value="{{ stress.max_drawdown_usd|int }}" min="250" step="250" oninput="scrubShock(document.getElementById('shockRange').value)">
+            </div>
+            <div class="guardrail-field">
+              <label for="inputCorrCap">Pair Corr Cap (ρ)</label>
+              <input type="number" id="inputCorrCap" value="{{ '%.2f'|format(stress.correlation_cap) }}" min="0.30" max="0.95" step="0.05">
+            </div>
+            <button type="button" class="preset-btn" id="runLiveAuditBtn" onclick="runLiveServerStress()">RECOMPUTE LIVE AUDIT</button>
+          </div>
+
+          <div class="table-scroll">
+            <table class="arch-table">
+              <thead>
+                <tr>
+                  <th>Asset</th>
+                  <th class="mono-num">14d ATR</th>
+                  <th class="mono-num">BTC Beta</th>
+                  <th>Current → Mandate</th>
+                  <th class="mono-num">Unhedged</th>
+                  <th class="mono-num">Mandate</th>
+                </tr>
+              </thead>
+              <tbody id="bookTableBody">
+                {% for row in stress.asset_rows %}
+                {% set cur_pct = (row.initial_weight * 100)|round|int %}
+                {% set mnd_pct = (row.mandate_weight * 100)|round|int %}
+                <tr>
+                  <td>
+                    <span class="token-badge">{{ row.symbol }}</span>
+                    <span class="status-tag {% if row.action == 'TRIM' %}tag-breach{% elif row.action == 'SHIELD' %}tag-pass{% else %}tag-cobalt{% endif %}">{{ row.action }}</span>
+                  </td>
+                  <td class="mono-num">{{ "%.1f"|format(row.atr_14d_pct) }}%</td>
+                  <td class="mono-num">{{ "%.2f"|format(row.beta_vs_btc) }}x</td>
+                  <td>
+                    <div class="weight-bar-wrap">
+                      <span class="mono-num" style="width:82px;">{{ cur_pct }}% → <strong>{{ mnd_pct }}%</strong></span>
+                      <div class="mini-track"><div class="mini-fill-cur" style="width:{{ cur_pct }}%"></div></div>
+                      <div class="mini-track"><div class="mini-fill-tgt" style="width:{{ mnd_pct }}%"></div></div>
+                    </div>
+                  </td>
+                  <td class="mono-num" id="{{ row.symbol|lower }}Unhedged" {% if row.action == 'TRIM' %}style="color:var(--crimson);"{% endif %}>
+                    {% if row.unhedged_loss_usd == 0 %}$0{% else %}-${{ "{:,.0f}".format(row.unhedged_loss_usd|abs) }}{% endif %}
+                  </td>
+                  <td class="mono-num" id="{{ row.symbol|lower }}Hedged" {% if row.action == 'SHIELD' %}style="color:var(--emerald);"{% endif %}>
+                    {% if row.mandate_loss_usd == 0 %}$0{% else %}-${{ "{:,.0f}".format(row.mandate_loss_usd|abs) }}{% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Alluvial / Sankey Capital Rotation Vector SVG -->
+          <div class="chart-frame">
+            <div class="chart-legend" style="justify-content:space-between;">
+              <span>ALLUVIAL CAPITAL ROTATION VECTOR ($6,800 REALLOCATED)</span>
+              <span>SOL -$4,000 · AVAX -$2,800 → BTC +$2,800 · USDC +$4,000</span>
+            </div>
+            <svg viewBox="0 0 520 130" width="100%" height="130" role="img" aria-label="Sankey capital rotation flow from SOL and AVAX into BTC and USDC shield">
+              <rect x="8" y="14" width="14" height="44" fill="var(--crimson)" />
+              <text x="28" y="32" fill="var(--ink-primary)" font-family="Space Mono" font-size="11" font-weight="700">SOL 42% ($8.4k)</text>
+              <text x="28" y="47" fill="var(--crimson)" font-family="Space Mono" font-size="10">Trim -$4,000</text>
+
+              <rect x="8" y="72" width="14" height="44" fill="var(--crimson)" />
+              <text x="28" y="90" fill="var(--ink-primary)" font-family="Space Mono" font-size="11" font-weight="700">AVAX 28% ($5.6k)</text>
+              <text x="28" y="105" fill="var(--crimson)" font-family="Space Mono" font-size="10">Trim -$2,800</text>
+
+              <path d="M 150 28 C 245 28, 265 28, 355 28" fill="none" stroke="var(--cobalt-bright)" stroke-width="14" stroke-opacity="0.34" />
+              <path d="M 150 44 C 245 44, 265 86, 355 86" fill="none" stroke="var(--emerald)" stroke-width="18" stroke-opacity="0.36" />
+              <path d="M 150 86 C 245 86, 265 42, 355 42" fill="none" stroke="var(--cobalt-bright)" stroke-width="10" stroke-opacity="0.28" />
+              <path d="M 150 100 C 245 100, 265 104, 355 104" fill="none" stroke="var(--emerald)" stroke-width="14" stroke-opacity="0.36" />
+
+              <rect x="498" y="14" width="14" height="44" fill="var(--cobalt-bright)" />
+              <text x="490" y="32" text-anchor="end" fill="var(--ink-primary)" font-family="Space Mono" font-size="11" font-weight="700">BTC 34% ($6.8k)</text>
+              <text x="490" y="47" text-anchor="end" fill="var(--cobalt-bright)" font-family="Space Mono" font-size="10">Core Anchor +$2,800</text>
+
+              <rect x="498" y="72" width="14" height="44" fill="var(--emerald)" />
+              <text x="490" y="90" text-anchor="end" fill="var(--ink-primary)" font-family="Space Mono" font-size="11" font-weight="700">USDC 30% ($6.0k)</text>
+              <text x="490" y="105" text-anchor="end" fill="var(--emerald)" font-family="Space Mono" font-size="10">Drawdown Shield +$4,000</text>
+            </svg>
+          </div>
+
+          <div class="commit-bar">
+            <div>
+              <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--ink-secondary);">
+                EVIDENCE SEAL (SHA-256): <strong id="liveEvidenceHash" style="color:var(--cobalt-bright);">0x{{ evidence_sha256[:16] }}</strong>
+              </div>
+              <div style="font-size:12.5px;color:var(--ink-primary);margin-top:2px;">
+                RYO_MCP + OKX_168H + DEEPSEEK_V4.1 DETERMINISTIC SNAPSHOT
+              </div>
+            </div>
+            <button type="button" class="btn-commit" id="commitMandateBtn" onclick="sealAndCommitMandate()">
+              SEAL &amp; COMMIT MANDATE
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right 7 cols: 168H Realized + 48H Shock Cone Fan Chart & Waterfall Attribution -->
+      <section class="arch-cell" aria-label="168-Hour Realized Trajectory and 48-Hour Shock Confidence Cone">
+        <div class="cell-head">
+          <h2 class="cell-title">168H Realized Equity + 48H Shock Cone (Confidence Band)</h2>
+          <span class="status-tag tag-breach" id="coneBadge">UNHEDGED BREACHES -$2,000 FLOOR</span>
+        </div>
+        <div class="cell-body">
+          <div class="chart-frame">
+            <div class="chart-legend">
+              <span class="legend-item"><span class="swatch-line" style="background:var(--ink-primary);"></span> 168H Realized ($20,000)</span>
+              <span class="legend-item"><span class="swatch-line" style="background:var(--cobalt-bright);"></span> Mandate Rebalanced Path</span>
+              <span class="legend-item"><span class="swatch-line" style="background:var(--crimson);"></span> Unhedged Shock Cone (95% CI)</span>
+              <span class="legend-item"><span class="swatch-line" style="background:var(--gold);border-bottom:1px dashed var(--gold);"></span> Max Drawdown Floor ($18,000)</span>
+            </div>
+
+            <svg id="fanConeSvg" viewBox="0 0 860 250" width="100%" height="250" role="img" aria-label="Portfolio equity fan chart showing 168h realized history and 48h shock confidence bands">
+              <line x1="55" y1="36" x2="835" y2="36" stroke="var(--rule-hairline)" />
+              <line x1="55" y1="96" x2="835" y2="96" stroke="var(--rule-hairline)" />
+              <line x1="55" y1="158" x2="835" y2="158" stroke="var(--gold)" stroke-width="1.5" stroke-dasharray="6 4" />
+              <line x1="55" y1="220" x2="835" y2="220" stroke="var(--rule-hairline)" />
+
+              <text x="46" y="40" text-anchor="end" fill="var(--ink-muted)" font-family="Space Mono" font-size="10">$21k</text>
+              <text x="46" y="100" text-anchor="end" fill="var(--ink-primary)" font-family="Space Mono" font-size="10" font-weight="700">$20k</text>
+              <text x="46" y="162" text-anchor="end" fill="var(--gold)" font-family="Space Mono" font-size="10" font-weight="700">$18k</text>
+              <text x="46" y="224" text-anchor="end" fill="var(--crimson)" font-family="Space Mono" font-size="10">$16k</text>
+
+              <text x="64" y="151" fill="var(--gold)" font-family="Space Mono" font-size="10" font-weight="700">MAX DRAWDOWN GUARDRAIL (-$2,000)</text>
+
+              <line x1="540" y1="20" x2="540" y2="235" stroke="var(--rule-strong)" stroke-dasharray="3 3" />
+              <text x="546" y="32" fill="var(--ink-secondary)" font-family="Space Mono" font-size="10">T0: SHOCK ONSET</text>
+
+              <polyline fill="none" stroke="var(--ink-primary)" stroke-width="2.5"
+                points="55,118 125,112 195,124 265,105 335,98 405,102 475,88 540,96" />
+
+              <polygon id="unhedgedOuterCone" fill="var(--crimson)" fill-opacity="0.14"
+                points="540,96 630,138 720,174 825,192 825,238 720,218 630,172 540,96" />
+              <polygon id="unhedgedInnerCone" fill="var(--crimson)" fill-opacity="0.24"
+                points="540,96 630,148 720,186 825,204 825,226 720,204 630,162 540,96" />
+              <polyline id="unhedgedMeanLine" fill="none" stroke="var(--crimson)" stroke-width="2.5" stroke-dasharray="6 4"
+                points="540,96 630,156 720,195 825,214" />
+
+              <polygon id="hedgedOuterCone" fill="var(--cobalt-bright)" fill-opacity="0.16"
+                points="540,96 630,112 720,126 825,134 825,162 720,152 630,132 540,96" />
+              <polyline id="hedgedMeanLine" fill="none" stroke="var(--cobalt-bright)" stroke-width="3"
+                points="540,96 630,122 720,139 825,148" />
+
+              <circle cx="540" cy="96" r="4.5" fill="var(--ink-primary)" />
+              <circle id="hedgedEndDot" cx="825" cy="148" r="4.5" fill="var(--cobalt-bright)" />
+              <circle id="unhedgedEndDot" cx="825" cy="214" r="4.5" fill="var(--crimson)" />
+
+              <text id="hedgedEndLabel" x="815" y="114" text-anchor="end" fill="var(--cobalt-bright)" font-family="Space Mono" font-size="11" font-weight="700">MANDATE ${{ "{:,.0f}".format(stress.fan_chart.mandate_end_usd) }} (-${{ "{:,.0f}".format(stress.rebalanced_drawdown_usd|abs) }} PASS)</text>
+              <text id="unhedgedEndLabel" x="815" y="238" text-anchor="end" fill="var(--crimson)" font-family="Space Mono" font-size="11" font-weight="700">UNHEDGED ${{ "{:,.0f}".format(stress.fan_chart.unhedged_end_usd) }} (-${{ "{:,.0f}".format(stress.unhedged_drawdown_usd|abs) }})</text>
+            </svg>
+          </div>
+
+          <!-- Cumulative Waterfall Variance Attribution -->
+          <div class="chart-frame">
+            <div class="chart-legend" style="justify-content:space-between;">
+              <span>WATERFALL ATTRIBUTION: HOW MANDATE RECOVERS +${{ "{:,.0f}".format(stress.capital_preserved_usd) }} OF TAIL LOSS</span>
+              <span>UNIT: USD SHOCK IMPACT</span>
+            </div>
+            <svg viewBox="0 0 860 115" width="100%" height="115" role="img" aria-label="Waterfall chart decomposing unhedged loss and rebalance recovery">
+              <rect x="40" y="22" width="130" height="28" fill="var(--crimson)" />
+              <text x="105" y="40" text-anchor="middle" fill="#FFFFFF" font-family="Space Mono" font-size="11" font-weight="700">-${{ "{:,.0f}".format(stress.waterfall_steps[0].delta_usd|abs) }}</text>
+              <text x="105" y="68" text-anchor="middle" fill="var(--ink-secondary)" font-family="Space Mono" font-size="10">1. Unhedged Book</text>
+
+              <rect x="205" y="22" width="130" height="28" fill="var(--emerald)" />
+              <text x="270" y="40" text-anchor="middle" fill="#07080C" font-family="Space Mono" font-size="11" font-weight="700">+${{ "{:,.0f}".format(stress.waterfall_steps[1].delta_usd|abs) }}</text>
+              <text x="270" y="68" text-anchor="middle" fill="var(--ink-secondary)" font-family="Space Mono" font-size="10">{{ stress.waterfall_steps[1].label }}</text>
+
+              <rect x="370" y="22" width="130" height="28" fill="var(--emerald)" />
+              <text x="435" y="40" text-anchor="middle" fill="#07080C" font-family="Space Mono" font-size="11" font-weight="700">+${{ "{:,.0f}".format(stress.waterfall_steps[2].delta_usd|abs) }}</text>
+              <text x="435" y="68" text-anchor="middle" fill="var(--ink-secondary)" font-family="Space Mono" font-size="10">{{ stress.waterfall_steps[2].label }}</text>
+
+              <rect x="535" y="22" width="120" height="28" fill="var(--emerald)" />
+              <text x="595" y="40" text-anchor="middle" fill="#07080C" font-family="Space Mono" font-size="11" font-weight="700">+${{ "{:,.0f}".format(stress.waterfall_steps[3].delta_usd|abs) }}</text>
+              <text x="595" y="68" text-anchor="middle" fill="var(--ink-secondary)" font-family="Space Mono" font-size="10">4. Shield Offset</text>
+
+              <rect x="690" y="22" width="135" height="28" fill="var(--cobalt-bright)" />
+              <text x="757" y="40" text-anchor="middle" fill="#FFFFFF" font-family="Space Mono" font-size="11" font-weight="700">-${{ "{:,.0f}".format(stress.waterfall_steps[4].delta_usd|abs) }} PASS</text>
+              <text x="757" y="68" text-anchor="middle" fill="var(--cobalt-bright)" font-family="Space Mono" font-size="10" font-weight="700">5. Mandate Net</text>
+            </svg>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Bottom Row (7:5 Split): 168h Correlation Matrix + Scatter Lens AND Risk Officer Audit Trail -->
+    <div class="arch-row-bottom">
+      <section class="arch-cell" aria-label="168-Hour Pairwise Correlation Matrix and Joint Return Scatter Lens">
+        <div class="cell-head">
+          <h2 class="cell-title">168H Pairwise Correlation Matrix &amp; Joint-Return Scatter Lens</h2>
+          <span class="status-tag tag-breach">CAP CEILING: ρ ≤ {{ "%.2f"|format(stress.correlation_cap) }} (CLICK ANY PAIR)</span>
+        </div>
+        <div class="cell-body">
+          <div class="matrix-lens-split">
+            <div>
+              <div class="corr-matrix" role="grid" aria-label="Pairwise correlation matrix">
+                <div class="m-hdr">ASSET</div>
+                <div class="m-hdr">SOL</div>
+                <div class="m-hdr">AVAX</div>
+                <div class="m-hdr">BTC</div>
+                <div class="m-hdr">ETH</div>
+
+                <div class="m-hdr">SOL</div>
+                <div class="m-cell m-diag">1.00</div>
+                <button type="button" class="m-cell m-breach active-lens" onclick="inspectPair('SOL', 'AVAX', 0.86, 1.52, 'BREACH (>0.75 CAP)', this)">0.86 !</button>
+                <button type="button" class="m-cell m-warn" onclick="inspectPair('SOL', 'BTC', 0.72, 1.48, 'NEAR CAP (0.72)', this)">0.72</button>
+                <button type="button" class="m-cell m-warn" onclick="inspectPair('SOL', 'ETH', 0.74, 1.39, 'NEAR CAP (0.74)', this)">0.74</button>
+
+                <div class="m-hdr">AVAX</div>
+                <button type="button" class="m-cell m-breach" onclick="inspectPair('AVAX', 'SOL', 0.86, 1.52, 'BREACH (>0.75 CAP)', this)">0.86 !</button>
+                <div class="m-cell m-diag">1.00</div>
+                <button type="button" class="m-cell m-safe" onclick="inspectPair('AVAX', 'BTC', 0.69, 1.56, 'WITHIN CAP (<0.75)', this)">0.69</button>
+                <button type="button" class="m-cell m-warn" onclick="inspectPair('AVAX', 'ETH', 0.71, 1.44, 'NEAR CAP (0.71)', this)">0.71</button>
+
+                <div class="m-hdr">BTC</div>
+                <button type="button" class="m-cell m-warn" onclick="inspectPair('BTC', 'SOL', 0.72, 1.48, 'NEAR CAP (0.72)', this)">0.72</button>
+                <button type="button" class="m-cell m-safe" onclick="inspectPair('BTC', 'AVAX', 0.69, 1.56, 'WITHIN CAP (<0.75)', this)">0.69</button>
+                <div class="m-cell m-diag">1.00</div>
+                <button type="button" class="m-cell m-breach" onclick="inspectPair('BTC', 'ETH', 0.81, 1.18, 'BREACH (>0.75 CAP)', this)">0.81 !</button>
+
+                <div class="m-hdr">ETH</div>
+                <button type="button" class="m-cell m-warn" onclick="inspectPair('ETH', 'SOL', 0.74, 1.39, 'NEAR CAP (0.74)', this)">0.74</button>
+                <button type="button" class="m-cell m-warn" onclick="inspectPair('ETH', 'AVAX', 0.71, 1.44, 'NEAR CAP (0.71)', this)">0.71</button>
+                <button type="button" class="m-cell m-breach" onclick="inspectPair('ETH', 'BTC', 0.81, 1.18, 'BREACH (>0.75 CAP)', this)">0.81 !</button>
+                <div class="m-cell m-diag">1.00</div>
+              </div>
+              <div style="font-family:'Space Mono',monospace;font-size:11px;color:var(--ink-secondary);margin-top:10px;">
+                [!] Non-color symbols mark every cell exceeding your 0.75 pairwise correlation ceiling.
+              </div>
+            </div>
+
+            <div class="lens-inspector" aria-live="polite">
+              <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                  <span style="font-family:'Chakra Petch',sans-serif;font-weight:700;font-size:15px;" id="lensPairTitle">SOL × AVAX (168H)</span>
+                  <span class="status-tag tag-breach" id="lensStatusBadge">BREACH (&gt;0.75 CAP)</span>
+                </div>
+                <svg id="lensScatterSvg" viewBox="0 0 240 130" width="100%" height="130" role="img" aria-label="168-hour joint hourly log-return scatter plot">
+                  <line x1="20" y1="65" x2="225" y2="65" stroke="var(--rule-hairline)" />
+                  <line x1="120" y1="10" x2="120" y2="120" stroke="var(--rule-hairline)" />
+                  <line id="lensRegLine" x1="35" y1="112" x2="210" y2="18" stroke="var(--crimson)" stroke-width="2" />
+                  <g id="lensScatterDots" fill="var(--cobalt-bright)" fill-opacity="0.85">
+                    <circle cx="52" cy="102" r="3" /><circle cx="68" cy="95" r="3" />
+                    <circle cx="84" cy="84" r="3" /><circle cx="96" cy="79" r="3" />
+                    <circle cx="112" cy="69" r="3" /><circle cx="128" cy="60" r="3" />
+                    <circle cx="144" cy="52" r="3" /><circle cx="162" cy="43" r="3" />
+                    <circle cx="178" cy="34" r="3" /><circle cx="195" cy="25" r="3" />
+                  </g>
+                </svg>
+              </div>
+              <div style="font-family:'Space Mono',monospace;font-size:11px;border-top:1px solid var(--rule-hairline);padding-top:8px;display:flex;justify-content:space-between;">
+                <span id="lensRhoMetric">PEARSON ρ: 0.86</span>
+                <span id="lensBetaMetric">JOINT BETA: 1.52x</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="arch-cell" aria-label="Risk Officer Reasoning Chain">
+        <div class="cell-head">
+          <h2 class="cell-title">Risk Officer Audit Trail</h2>
+          <span class="status-tag tag-cobalt">DEEPSEEK-V4.1 + DETERMINISTIC</span>
+        </div>
+        <div class="cell-body">
+          {% for step in officer.steps %}
+          <div class="officer-step {% if step.severity == 'breach' %}breach-step{% endif %}">
+            <div class="officer-meta">
+              <span>{{ step.title }}</span>
+              <span {% if loop.index == 2 %}id="trailShockMeta"{% endif %}>{{ step.badge }}</span>
+            </div>
+            <p class="officer-text" {% if loop.index == 2 %}id="trailShockBody"{% endif %}>
+              {{ step.body }}
+            </p>
+          </div>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- ==================== ROUTE 2: Mandate Ledger (/ledger) ==================== -->
+  <div id="pane-ledger" class="route-pane {% if active_route == 'ledger' %}active{% endif %}">
+    <section class="arch-cell" style="border-bottom:2px solid var(--rule-heavy);" aria-label="SQLite Committed Mandate Ledger and Counterfactual Settlement">
+      <div class="cell-head">
+        <h2 class="cell-title">Committed Rebalance Mandates &amp; Live Counterfactual P&amp;L Settlement (SQLite WAL)</h2>
+        <button type="button" class="preset-btn" onclick="runDeterministicReplayAll()">Run Deterministic SHA-256 Replay Check</button>
+      </div>
+      <div class="cell-body">
+        <p style="font-size:13.5px;color:var(--ink-secondary);">
+          Every committed Practice Rebalance Mandate is stored in SQLite (<code>WAL</code> mode) with a canonical JSON snapshot and SHA-256 digest. Counterfactual settlement compares your unhedged starting weights against the committed mandate weights.
+        </p>
+        <div class="table-scroll">
+          <table class="arch-table">
+            <thead>
+              <tr>
+                <th>Mandate ID</th>
+                <th>Sealed At (UTC)</th>
+                <th>Shock Vector</th>
+                <th>Weight Rotation</th>
+                <th class="mono-num">Unhedged Shock</th>
+                <th class="mono-num">Mandate Shock</th>
+                <th class="mono-num">Capital Saved</th>
+                <th>Deterministic Replay Hash</th>
+              </tr>
+            </thead>
+            <tbody id="ledgerRows">
+              {% for m in mandates %}
+              <tr>
+                <td><span class="token-badge">#{{ m.mandate_id }}</span></td>
+                <td class="mono-num" style="text-align:left;">{{ m.sealed_at }}</td>
+                <td>{{ m.scenario_label }}</td>
+                <td style="font-family:'Space Mono',monospace;font-size:11.5px;">{{ m.rotation_summary }}</td>
+                <td class="mono-num" style="color:var(--crimson);">-${{ "{:,.2f}".format(m.unhedged_drawdown_usd|abs) }}</td>
+                <td class="mono-num" style="color:var(--cobalt-bright);">-${{ "{:,.2f}".format(m.rebalanced_drawdown_usd|abs) }}</td>
+                <td class="mono-num" style="color:var(--emerald);font-weight:700;">+${{ "{:,.2f}".format(m.capital_preserved_usd) }}</td>
+                <td>
+                  <button type="button" class="status-tag tag-pass" style="cursor:pointer;" data-mandate-id="{{ m.mandate_id }}" onclick="verifySingleMandate('{{ m.mandate_id }}', this)">
+                    {{ m.short_hash }} VERIFIED
+                  </button>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ==================== ROUTE 3: MCP Skill Workbench (/skills) ==================== -->
+  <div id="pane-skills" class="route-pane {% if active_route == 'skills' %}active{% endif %}">
+    <div class="arch-row-top">
+      <section class="arch-cell" aria-label="Track 3 MCP Skills and Fault-Injection Drill">
+        <div class="cell-head">
+          <h2 class="cell-title">Track 3 MCP Skill Catalog &amp; Resilience Drill</h2>
+          <span class="status-tag tag-cobalt">PROTOCOL: 2024-11-05</span>
+        </div>
+        <div class="cell-body">
+          <p style="font-size:13.5px;color:var(--ink-secondary);margin-bottom:10px;">
+            ShockBook extends RYO-CHAN's 6 single-token/macro tools with two composable multi-asset portfolio MCP skills over REST (<code>POST /api/mcp/tools/{tool}/call</code>) and JSON-RPC 2.0 (<code>POST /api/mcp</code>). Trigger any fault mode below to test live resilience:
+          </p>
+
+          <div class="scenario-preset-row" style="margin-bottom:14px;">
+            <button type="button" class="preset-btn" aria-pressed="true" onclick="executeLiveMcpDrill('portfolio_stress_test', 'live', this)">1. Live Mode (status: ok)</button>
+            <button type="button" class="preset-btn" aria-pressed="false" onclick="executeLiveMcpDrill('portfolio_stress_test', 'ryo_429', this)">2. Inject RYO 429 Quota Guard</button>
+            <button type="button" class="preset-btn" aria-pressed="false" onclick="executeLiveMcpDrill('portfolio_stress_test', 'null_perp', this)">3. Inject Perp Lane = null</button>
+            <button type="button" class="preset-btn" aria-pressed="false" onclick="executeLiveMcpDrill('correlation_guard', 'live', this)">4. Run correlation_guard</button>
+          </div>
+
+          <div class="officer-step">
+            <div class="officer-meta">
+              <span>portfolio_stress_test</span>
+              <span>FILLS MULTI-ASSET PORTFOLIO GAP</span>
+            </div>
+            <p class="officer-text">
+              Composes RYO <code>deep_analysis</code> ATR/perp posture + 168h OKX log-return covariance to evaluate portfolio drawdown against user dollar limits and output minimum-variance rebalance weights.
+            </p>
+          </div>
+
+          <div class="officer-step">
+            <div class="officer-meta">
+              <span>correlation_guard</span>
+              <span>PAIRWISE 168H CLUSTER DETECTOR</span>
+            </div>
+            <p class="officer-text">
+              Computes the full N×N pairwise hourly return correlation matrix and BTC beta vector, flagging hidden single-factor clusters above the caller's <code>correlation_cap</code>.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="arch-cell" aria-label="Track 3 Public Response Envelope Output">
+        <div class="cell-head">
+          <h2 class="cell-title">Public Response Envelope Inspector</h2>
+          <span class="status-tag tag-pass" id="drillEnvelopeBadge">status: "{{ sample_envelope.status }}" · data_mode: "{{ sample_envelope.data_mode }}"</span>
+        </div>
+        <div class="cell-body">
+          <pre class="envelope-viewer" id="drillEnvelopeJson">{{ sample_envelope_json }}</pre>
+        </div>
+      </section>
+    </div>
+  </div>
+
+</main>
+
+<!-- Ft5 Minimal Telemetry Colophon Bar -->
+<footer class="colophon-bar">
+  <div>
+    <strong>SHOCKBOOK v1.0</strong> · RYO-CHAN VIRTUAL HACKATHON 2026 (TRACKS 1 · 2 · 3)
+  </div>
+  <div>
+    UPSTREAM: <code>app-ryochan.com/api/mcp</code> (KEY <code>{{ whoami.key_id }}</code>) + <code>okx.com/api/v5/market/candles</code> + <code>DeepSeek-V4.1-Flash-1017</code>
+  </div>
+  <div>
+    NULL-SAFE ENVELOPE CONTRACT: <strong>VERIFIED</strong>
+  </div>
+</footer>
+
+<script src="/static/app.js"></script>
+</body>
+</html>
