@@ -116,24 +116,24 @@ def _build_workspace_context(active_route: str) -> Dict[str, Any]:
     }
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.api_route("/", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def root_redirect(request: Request):
     return RedirectResponse(url="/desk", status_code=302)
 
 
-@app.get("/desk", response_class=HTMLResponse)
+@app.api_route("/desk", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def route_desk(request: Request):
     ctx = _build_workspace_context("desk")
     return templates.TemplateResponse(request, "app.html", ctx)
 
 
-@app.get("/ledger", response_class=HTMLResponse)
+@app.api_route("/ledger", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def route_ledger(request: Request):
     ctx = _build_workspace_context("ledger")
     return templates.TemplateResponse(request, "app.html", ctx)
 
 
-@app.get("/skills", response_class=HTMLResponse)
+@app.api_route("/skills", methods=["GET", "HEAD"], response_class=HTMLResponse)
 async def route_skills(request: Request):
     ctx = _build_workspace_context("skills")
     return templates.TemplateResponse(request, "app.html", ctx)
