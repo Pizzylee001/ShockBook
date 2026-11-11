@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShockBook System Architecture Diagram</title>
+<link rel="stylesheet" href="../../static/fonts.css">
+<style>
+  :root {
+    --bg-primary: #0D0F12;
+    --bg-elevated: #14171C;
+    --bg-glass: #1A1E26;
+    --ink-primary: #F2EFE9;
+    --ink-secondary: #A0A8B4;
+    --ink-muted: #68707C;
+    --accent-primary: #FF5526;
+    --accent-secondary: #2B6BFF;
+    --semantic-success: #16C784;
+    --semantic-warning: #F5A623;
+    --border-hairline: #282E38;
+    --font-display: 'Chakra Petch', sans-serif;
+    --font-sans: 'Public Sans', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+  }
+  [data-theme="light"] {
+    --bg-primary: #F5F2EB;
+    --bg-elevated: #EAE5DC;
+    --bg-glass: #E2DDD2;
+    --ink-primary: #121417;
+    --ink-secondary: #484E58;
+    --ink-muted: #767E8A;
+    --accent-primary: #D93B10;
+    --accent-secondary: #1D4ED8;
+    --semantic-success: #0D8A58;
+    --semantic-warning: #B87400;
+    --border-hairline: #C8C1B4;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg-primary);
+    color: var(--ink-primary);
+    font-family: var(--font-sans);
+    padding: 32px;
+    width: 1200px;
+    overflow: hidden;
+  }
+  .diagram-frame {
+    border: 1px solid var(--border-hairline);
+    background: var(--bg-elevated);
+    padding: 28px;
+  }
+  .diagram-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid var(--border-hairline);
+    padding-bottom: 16px;
+    margin-bottom: 24px;
+  }
+  .diagram-title {
+    font-family: var(--font-display);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: var(--ink-primary);
+  }
+  .diagram-subtitle {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--ink-secondary);
+  }
+  svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .node-box {
+    fill: var(--bg-primary);
+    stroke: var(--border-hairline);
+    stroke-width: 1.5;
+  }
+  .node-box-accent {
+    fill: var(--bg-primary);
+    stroke: var(--accent-primary);
+    stroke-width: 2;
+  }
+  .node-box-cobalt {
+    fill: var(--bg-primary);
+    stroke: var(--accent-secondary);
+    stroke-width: 2;
+  }
+  .node-box-green {
+    fill: var(--bg-primary);
+    stroke: var(--semantic-success);
+    stroke-width: 1.5;
+  }
+  .trust-zone {
+    fill: var(--bg-glass);
+    stroke: var(--border-hairline);
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
+  }
+  .zone-label {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    fill: var(--ink-muted);
+    letter-spacing: 0.08em;
+  }
+  .node-title {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    fill: var(--ink-primary);
+  }
+  .node-gloss {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    fill: var(--ink-secondary);
+  }
+  .node-tag {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    fill: var(--accent-primary);
+  }
+  .node-tag-cobalt {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    fill: var(--accent-secondary);
+  }
+  .node-tag-green {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    fill: var(--semantic-success);
+  }
+  .edge-line {
+    fill: none;
+    stroke: var(--ink-secondary);
+    stroke-width: 1.5;
+  }
+  .edge-line-accent {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 2;
+  }
+  .edge-line-cobalt {
+    fill: none;
+    stroke: var(--accent-secondary);
+    stroke-width: 2;
+  }
+  .edge-arrow {
+    fill: var(--ink-secondary);
+  }
+  .edge-arrow-accent {
+    fill: var(--accent-primary);
+  }
+  .edge-arrow-cobalt {
+    fill: var(--accent-secondary);
+  }
+  .edge-label {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    fill: var(--ink-primary);
+  }
+</style>
+</head>
+<body>
+<div class="diagram-frame">
+  <div class="diagram-header">
+    <div class="diagram-title">SHOCKBOOK SYSTEM MAP: EVIDENCE TO COMMITTED MANDATE</div>
+    <div class="diagram-subtitle">TRACK 1 (AGENT) + TRACK 2 (COCKPIT) + TRACK 3 (MCP SKILL SERVER)</div>
+  </div>
+
+  <svg viewBox="0 0 1120 520" role="img" aria-label="ShockBook system architecture showing data sources, quantitative engine, SQLite WAL ledger, and three routes">
+    <defs>
+      <marker id="arrowDefault" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" class="edge-arrow"/>
+      </marker>
+      <marker id="arrowAccent" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" class="edge-arrow-accent"/>
+      </marker>
+      <marker id="arrowCobalt" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M 0 1 L 10 5 L 0 9 z" class="edge-arrow-cobalt"/>
+      </marker>
+    </defs>
+
+    <!-- Trust Zone 1: External Market & Research Feeds -->
+    <rect x="16" y="16" width="310" height="488" class="trust-zone"/>
+    <text x="32" y="42" class="zone-label">1. UPSTREAM EVIDENCE FEEDS</text>
+
+    <rect x="36" y="64" width="270" height="122" class="node-box-accent"/>
+    <text x="52" y="92" class="node-tag">RYO-CHAN MCP (60 RPM CAP)</text>
+    <text x="52" y="116" class="node-title">Single-Token &amp; Regime Signals</text>
+    <text x="52" y="140" class="node-gloss">analyze_token, deep_analysis,</text>
+    <text x="52" y="160" class="node-gloss">market_overview, sentiment shift</text>
+
+    <rect x="36" y="212" width="270" height="122" class="node-box-cobalt"/>
+    <text x="52" y="240" class="node-tag-cobalt">OKX PUBLIC V5 CANDLES</text>
+    <text x="52" y="264" class="node-title">168-Hour 1H OHLCV Series</text>
+    <text x="52" y="288" class="node-gloss">Hourly closes &amp; high-low bars</text>
+    <text x="52" y="308" class="node-gloss">for BTC, ETH, SOL, AVAX</text>
+
+    <rect x="36" y="360" width="270" height="122" class="node-box"/>
+    <text x="52" y="388" class="node-tag">RIVER AI (DEEPSEEK V4.1 FLASH)</text>
+    <text x="52" y="412" class="node-title">Risk Officer Synthesis</text>
+    <text x="52" y="436" class="node-gloss">Plain-language cause &amp; effect</text>
+    <text x="52" y="456" class="node-gloss">with deterministic rule fallback</text>
+
+    <!-- Trust Zone 2: ShockBook Core Engine (FastAPI) -->
+    <rect x="376" y="16" width="368" height="488" class="trust-zone"/>
+    <text x="392" y="42" class="zone-label">2. SHOCKBOOK QUANT ENGINE (FASTAPI)</text>
+
+    <rect x="396" y="64" width="328" height="136" class="node-box-accent"/>
+    <text x="412" y="92" class="node-tag">RESILIENCE &amp; NULL GATE</text>
+    <text x="412" y="116" class="node-title">Quota Guard &amp; Explicit Nulls</text>
+    <text x="412" y="140" class="node-gloss">Catches 429 rate limits cleanly.</text>
+    <text x="412" y="160" class="node-gloss">Missing fields stay null (never 0).</text>
+    <text x="412" y="180" class="node-gloss">Provenance badge on every run.</text>
+
+    <rect x="396" y="220" width="328" height="136" class="node-box-cobalt"/>
+    <text x="412" y="248" class="node-tag-cobalt">COVARIANCE &amp; SHOCK SOLVER</text>
+    <text x="412" y="272" class="node-title">168h Beta, 14d ATR &amp; Rebalance</text>
+    <text x="412" y="296" class="node-gloss">Computes pairwise Pearson r,</text>
+    <text x="412" y="316" class="node-gloss">1-sigma / 2-sigma shock cone,</text>
+    <text x="412" y="336" class="node-gloss">and correlation-capped trims.</text>
+
+    <rect x="396" y="376" width="328" height="106" class="node-box-green"/>
+    <text x="412" y="402" class="node-tag-green">SQLITE WAL + SHA-256 LEDGER</text>
+    <text x="412" y="426" class="node-title">Immutable Mandate Store</text>
+    <text x="412" y="450" class="node-gloss">Canonical JSON digest &amp; live</text>
+    <text x="412" y="470" class="node-gloss">counterfactual P&amp;L delta.</text>
+
+    <!-- Trust Zone 3: User & Agent Surfaces -->
+    <rect x="794" y="16" width="310" height="488" class="trust-zone"/>
+    <text x="810" y="42" class="zone-label">3. OPERATOR &amp; AGENT SURFACES</text>
+
+    <rect x="814" y="64" width="270" height="122" class="node-box-accent"/>
+    <text x="830" y="92" class="node-tag">ROUTE 1: /desk (TRACK 1 &amp; 2)</text>
+    <text x="830" y="116" class="node-title">Stress Desk Cockpit</text>
+    <text x="830" y="140" class="node-gloss">Fan cone, Sankey rebalance,</text>
+    <text x="830" y="160" class="node-gloss">covariance matrix &amp; waterfall</text>
+
+    <rect x="814" y="212" width="270" height="122" class="node-box-green"/>
+    <text x="830" y="240" class="node-tag-green">ROUTE 2: /ledger (TRACK 1)</text>
+    <text x="830" y="264" class="node-title">Mandate Audit Ledger</text>
+    <text x="830" y="288" class="node-gloss">Committed mandates, SHA-256</text>
+    <text x="830" y="308" class="node-gloss">replay verification &amp; P&amp;L saved</text>
+
+    <rect x="814" y="360" width="270" height="122" class="node-box-cobalt"/>
+    <text x="830" y="388" class="node-tag-cobalt">ROUTE 3: /skills (TRACK 3 MCP)</text>
+    <text x="830" y="412" class="node-title">MCP Skill Server &amp; Drill</text>
+    <text x="830" y="436" class="node-gloss">portfolio_stress_test and</text>
+    <text x="830" y="456" class="node-gloss">correlation_guard over JSON-RPC</text>
+
+    <!-- Right-Angled Connectors -->
+    <path d="M 306 125 L 396 125" class="edge-line-accent" marker-end="url(#arrowAccent)"/>
+    <path d="M 306 273 L 396 273" class="edge-line-cobalt" marker-end="url(#arrowCobalt)"/>
+    <path d="M 306 421 L 352 421 L 352 315 L 396 315" class="edge-line" marker-end="url(#arrowDefault)"/>
+
+    <path d="M 560 200 L 560 220" class="edge-line-accent" marker-end="url(#arrowAccent)"/>
+    <path d="M 560 356 L 560 376" class="edge-line-cobalt" marker-end="url(#arrowCobalt)"/>
+
+    <path d="M 724 260 L 768 260 L 768 125 L 814 125" class="edge-line-accent" marker-end="url(#arrowAccent)"/>
+    <path d="M 724 428 L 768 428 L 768 273 L 814 273" class="edge-line" marker-end="url(#arrowDefault)"/>
+    <path d="M 724 315 L 768 315 L 768 421 L 814 421" class="edge-line-cobalt" marker-end="url(#arrowCobalt)"/>
+  </svg>
+</div>
+</body>
+</html>
