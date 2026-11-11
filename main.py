@@ -265,6 +265,7 @@ async def mcp_whoami():
 
 
 @app.get("/api/mcp/tools")
+@app.get("/api/mcp/manifest")
 async def mcp_tools():
     return get_combined_mcp_catalog()
 
@@ -280,7 +281,20 @@ async def mcp_call_tool(tool_name: str, request: Request):
     return JSONResponse(content=envelope)
 
 
+@app.post("/api/mcp/call")
+async def mcp_call_flat(request: Request):
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    tool_name = body.get("skill") or body.get("name") or "portfolio_stress_test"
+    arguments = body.get("arguments") if isinstance(body, dict) and "arguments" in body else body
+    envelope = execute_track3_skill(tool_name, arguments)
+    return JSONResponse(content=envelope)
+
+
 @app.post("/api/mcp")
+@app.post("/api/mcp/rpc")
 async def mcp_jsonrpc(request: Request):
     try:
         payload = await request.json()
