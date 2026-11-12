@@ -4,6 +4,7 @@
 
 [![Live Deployment](https://img.shields.io/badge/Live_App-shockbook.vercel.app-FF5526?style=flat-square)](https://shockbook.vercel.app)
 [![Demo Video](https://img.shields.io/badge/YouTube_Demo-Watch_Walkthrough-FF5526?style=flat-square)](https://youtu.be/BEyMHFRtVmY)
+[![X Announcement](https://img.shields.io/badge/X-Announcement-000000?style=flat-square&logo=x)](https://x.com/Pizzy_lee__/status/2120845234267476337)
 [![MCP Protocol](https://img.shields.io/badge/MCP_JSON--RPC-2024--11--05-2B6BFF?style=flat-square)](https://shockbook.vercel.app/api/mcp/manifest)
 [![Test Suite](https://img.shields.io/badge/Tests-8%2F8_Passing-16C784?style=flat-square)](./tests/test_shockbook.py)
 [![License: MIT](https://img.shields.io/badge/License-MIT-F2EFE9?style=flat-square)](./LICENSE)
@@ -12,6 +13,7 @@
 
 - **Production Application:** [https://shockbook.vercel.app](https://shockbook.vercel.app)
 - **Demo Video (YouTube):** [https://youtu.be/BEyMHFRtVmY](https://youtu.be/BEyMHFRtVmY)
+- **X (Twitter) Post:** [https://x.com/Pizzy_lee__/status/2120845234267476337](https://x.com/Pizzy_lee__/status/2120845234267476337)
 - **Stress Desk (`/desk`):** [https://shockbook.vercel.app/desk](https://shockbook.vercel.app/desk)
 - **Mandate Ledger (`/ledger`):** [https://shockbook.vercel.app/ledger](https://shockbook.vercel.app/ledger)
 - **MCP Skill Workbench (`/skills`):** [https://shockbook.vercel.app/skills](https://shockbook.vercel.app/skills)
